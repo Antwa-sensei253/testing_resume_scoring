@@ -1,27 +1,17 @@
 #!/usr/bin/env python3
 import argparse
-import base64
 import os
 import time
 import datetime
-import socket
-import platform
-import geocoder
-import secrets
 import random
-import psycopg2
-from psycopg2 import sql
 from pyresparser import ResumeParser
-from pdfminer3.layout import LAParams, LTTextBox
+from pdfminer3.layout import LAParams
 from pdfminer3.pdfpage import PDFPage
-from pdfminer3.pdfinterp import PDFResourceManager
-from pdfminer3.pdfinterp import PDFPageInterpreter
+from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer3.converter import TextConverter
-import io 
-from geopy.geocoders import Nominatim
-from Courses import ds_course, web_course, android_course, ios_course, uiux_course, resume_videos, interview_videos
+import io
 import nltk
-import sys
+from Courses import ds_course, web_course, android_course, ios_course, uiux_course, resume_videos, interview_videos
 
 # Download nltk stopwords if needed
 nltk.download('stopwords', quiet=True)
@@ -50,7 +40,6 @@ def pdf_reader(file):
     fake_file_handle.close()
     return text
 
-
 # Course recommendations based on the skills
 def course_recommender(course_list):
     print("\n⭐️ Recommended Courses: ⭐️")
@@ -68,17 +57,13 @@ def main():
     pdf_path = args.pdf_path
     pdf_name = os.path.basename(pdf_path)
 
-    
     # Check if the PDF file exists
     if not os.path.exists(pdf_path):
         print(f"Error: The file {pdf_path} does not exist.")
         sys.exit(1)
-    
 
     print(f"\nProcessing resume: {pdf_name}\n")
 
-    
-    
     # Parse the resume
     print("Analyzing your resume...")
     resume_data = ResumeParser(pdf_path).get_extracted_data()
@@ -86,14 +71,6 @@ def main():
     if resume_data:
         # Get the whole resume text
         resume_text = pdf_reader(pdf_path)
-        
-        # Basic info
-        #print("\n📄 Basic Information:")
-        #print(f"Name: {resume_data.get('name', 'Not found')}")
-        #print(f"Email: {resume_data.get('email', 'Not found')}")
-        #print(f"Contact: {resume_data.get('mobile_number', 'Not found')}")
-        #print(f"Degree: {resume_data.get('degree', 'Not found')}")
-        #print(f"Resume pages: {resume_data.get('no_of_pages', 'Not found')}")
         
         # Determine candidate level
         cand_level = ''
@@ -255,9 +232,6 @@ def main():
         print("\n✨ Resume analysis completed successfully! ✨")
     else:
         print("Error: Could not extract data from the resume.")
-    
-    # Close the database connection
-    conn.close()
 
 if __name__ == "__main__":
     main()
