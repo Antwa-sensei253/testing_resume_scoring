@@ -30,75 +30,7 @@ nltk.download('stopwords', quiet=True)
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Resume Parser with PostgreSQL')
     parser.add_argument('pdf_path', help='Path to the resume PDF file')
-    parser.add_argument('--name', required=True, help='Your name')
-    parser.add_argument('--email', required=True, help='Your email')
-    parser.add_argument('--mobile', required=True, help='Your mobile number')
     return parser.parse_args()
-
-# Connect to PostgreSQL database
-def connect_to_db():
-    try:
-        conn = psycopg2.connect(
-            dbname="cv",
-            user="postgres",
-            password="root",
-            host="localhost",
-            port="5432"
-        )
-        print("Connected to PostgreSQL successfully!")
-        return conn
-    except Exception as e:
-        print(f"Error connecting to PostgreSQL database: {e}")
-        sys.exit(1)
-
-# Create necessary tables if they don't exist
-def create_tables(conn):
-    cursor = conn.cursor()
-    
-    # Create user_data table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_data (
-            ID SERIAL PRIMARY KEY,
-            sec_token VARCHAR(20) NOT NULL,
-            ip_add VARCHAR(50),
-            host_name VARCHAR(50),
-            dev_user VARCHAR(50),
-            os_name_ver VARCHAR(50),
-            latlong VARCHAR(50),
-            city VARCHAR(50),
-            state VARCHAR(50),
-            country VARCHAR(50),
-            act_name VARCHAR(50) NOT NULL,
-            act_mail VARCHAR(50) NOT NULL,
-            act_mob VARCHAR(20) NOT NULL,
-            name VARCHAR(500) NOT NULL,
-            email VARCHAR(500) NOT NULL,
-            resume_score VARCHAR(8) NOT NULL,
-            timestamp VARCHAR(50) NOT NULL,
-            page_no VARCHAR(5) NOT NULL,
-            predicted_field TEXT NOT NULL,
-            user_level TEXT NOT NULL,
-            actual_skills TEXT NOT NULL,
-            recommended_skills TEXT NOT NULL,
-            recommended_courses TEXT NOT NULL,
-            pdf_name VARCHAR(50) NOT NULL
-        )
-    ''')
-    
-    # Create feedback table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_feedback (
-            ID SERIAL PRIMARY KEY,
-            feed_name VARCHAR(50) NOT NULL,
-            feed_email VARCHAR(50) NOT NULL,
-            feed_score VARCHAR(5) NOT NULL,
-            comments VARCHAR(100),
-            timestamp VARCHAR(50) NOT NULL
-        )
-    ''')
-    
-    conn.commit()
-    print("Database tables created successfully!")
 
 # Reads PDF file and extracts text
 def pdf_reader(file):
@@ -118,29 +50,6 @@ def pdf_reader(file):
     fake_file_handle.close()
     return text
 
-# Insert resume data into the database
-def insert_data(conn, sec_token, ip_add, host_name, dev_user, os_name_ver, latlong, city, state, country, 
-                act_name, act_mail, act_mob, name, email, res_score, timestamp, no_of_pages, 
-                reco_field, cand_level, skills, recommended_skills, courses, pdf_name):
-    
-    cursor = conn.cursor()
-    
-    insert_sql = '''
-        INSERT INTO user_data 
-        (sec_token, ip_add, host_name, dev_user, os_name_ver, latlong, city, state, country, 
-         act_name, act_mail, act_mob, name, email, resume_score, timestamp, page_no, 
-         predicted_field, user_level, actual_skills, recommended_skills, recommended_courses, pdf_name)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    '''
-    
-    rec_values = (str(sec_token), str(ip_add), host_name, dev_user, os_name_ver, str(latlong), 
-                  city, state, country, act_name, act_mail, act_mob, name, email, 
-                  str(res_score), timestamp, str(no_of_pages), reco_field, cand_level, 
-                  str(skills), str(recommended_skills), str(courses), pdf_name)
-    
-    cursor.execute(insert_sql, rec_values)
-    conn.commit()
-    print("Resume data inserted into database successfully!")
 
 # Course recommendations based on the skills
 def course_recommender(course_list):
@@ -158,42 +67,17 @@ def main():
     args = parse_arguments()
     pdf_path = args.pdf_path
     pdf_name = os.path.basename(pdf_path)
-    act_name = args.name
-    act_mail = args.email
-    act_mob = args.mobile
+
     
     # Check if the PDF file exists
     if not os.path.exists(pdf_path):
         print(f"Error: The file {pdf_path} does not exist.")
         sys.exit(1)
     
-    # Connect to PostgreSQL and create tables
-    conn = connect_to_db()
-    create_tables(conn)
-    
+
     print(f"\nProcessing resume: {pdf_name}\n")
+
     
-    # Collect system information
-    sec_token = secrets.token_urlsafe(12)
-    host_name = socket.gethostname()
-    ip_add = socket.gethostbyname(host_name)
-    dev_user = os.getlogin()
-    os_name_ver = platform.system() + " " + platform.release()
-    
-    # Collect geographic information
-    try:
-        g = geocoder.ip('me')
-        latlong = g.latlng
-        geolocator = Nominatim(user_agent="resume_parser")
-        location = geolocator.reverse(latlong, language='en')
-        address = location.raw['address']
-        city = address.get('city', '')
-        state = address.get('state', '')
-        country = address.get('country', '')
-    except Exception as e:
-        print(f"Warning: Could not get geolocation info: {e}")
-        latlong = None
-        city = state = country = ''
     
     # Parse the resume
     print("Analyzing your resume...")
@@ -204,12 +88,12 @@ def main():
         resume_text = pdf_reader(pdf_path)
         
         # Basic info
-        print("\n📄 Basic Information:")
-        print(f"Name: {resume_data.get('name', 'Not found')}")
-        print(f"Email: {resume_data.get('email', 'Not found')}")
-        print(f"Contact: {resume_data.get('mobile_number', 'Not found')}")
-        print(f"Degree: {resume_data.get('degree', 'Not found')}")
-        print(f"Resume pages: {resume_data.get('no_of_pages', 'Not found')}")
+        #print("\n📄 Basic Information:")
+        #print(f"Name: {resume_data.get('name', 'Not found')}")
+        #print(f"Email: {resume_data.get('email', 'Not found')}")
+        #print(f"Contact: {resume_data.get('mobile_number', 'Not found')}")
+        #print(f"Degree: {resume_data.get('degree', 'Not found')}")
+        #print(f"Resume pages: {resume_data.get('no_of_pages', 'Not found')}")
         
         # Determine candidate level
         cand_level = ''
@@ -361,14 +245,7 @@ def main():
         cur_date = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
         cur_time = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
         timestamp = str(cur_date + '_' + cur_time)
-        
-        # Insert data into PostgreSQL
-        insert_data(
-            conn, sec_token, ip_add, host_name, dev_user, os_name_ver, latlong, city, state, country,
-            act_name, act_mail, act_mob, resume_data['name'], resume_data['email'], str(resume_score),
-            timestamp, str(resume_data['no_of_pages']), reco_field, cand_level, str(resume_data['skills']),
-            str(recommended_skills), str(rec_course), pdf_name
-        )
+
         
         # Provide useful resources
         print("\n📚 Resources for Resume Improvement:")
