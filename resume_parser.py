@@ -1,3 +1,4 @@
+# resume_parser.py - Enhanced version
 import os
 import multiprocessing as mp
 import io
@@ -5,7 +6,7 @@ import spacy
 import pprint
 from spacy.matcher import Matcher
 from . import utils
-
+from . import utils_enhanced  # Import our new utilities
 
 class ResumeParser(object):
 
@@ -41,12 +42,22 @@ class ResumeParser(object):
         self.__get_basic_details()
 
     def get_extracted_data(self):
-        return self.__details
+        # Add confidence scores to the output
+        validated_details = utils_enhanced.validate_extracted_data(self.__details)
+        return validated_details
 
     def __get_basic_details(self):
         cust_ent = utils.extract_entities_wih_custom_model(
                             self.__custom_nlp
                         )
+        # Use our enhanced name extraction as primary method
+        name_advanced = utils_enhanced.extract_name_advanced(
+            self.__text_raw, 
+            self.__nlp,
+            self.__matcher
+        )
+        
+        # Traditional methods as backup
         name = utils.extract_name(self.__nlp, matcher=self.__matcher)
         email = utils.extract_email(self.__text)
         mobile = utils.extract_mobile_number(self.__text, self.__custom_regex)
@@ -58,10 +69,12 @@ class ResumeParser(object):
 
         entities = utils.extract_entity_sections_grad(self.__text_raw)
 
-        # extract name
-        try:
+        # extract name with improved priority order
+        if name_advanced != "Name not found":
+            self.__details['name'] = name_advanced
+        elif 'Name' in cust_ent and cust_ent['Name']:
             self.__details['name'] = cust_ent['Name'][0]
-        except (IndexError, KeyError):
+        else:
             self.__details['name'] = name
 
         # extract email
@@ -83,30 +96,3 @@ class ResumeParser(object):
             pass
 
         return
-
-
-def resume_result_wrapper(resume):
-    parser = ResumeParser(resume)
-    return parser.get_extracted_data()
-
-
-if __name__ == '__main__':
-    pool = mp.Pool(mp.cpu_count())
-
-    resumes = []
-    data = []
-    for root, directories, filenames in os.walk('resumes'):
-        for filename in filenames:
-            file = os.path.join(root, filename)
-            resumes.append(file)
-
-    results = [
-        pool.apply_async(
-            resume_result_wrapper,
-            args=(x,)
-        ) for x in resumes
-    ]
-
-    results = [p.get() for p in results]
-
-    pprint.pprint(results)
