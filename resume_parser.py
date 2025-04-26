@@ -5,8 +5,8 @@ import io
 import spacy
 import pprint
 from spacy.matcher import Matcher
-from . import utils
-from . import utils_enhanced  # Import our new utilities
+from venv import utils
+from Temp import utils_enhanced  # Import our new utilities
 
 class ResumeParser(object):
 
