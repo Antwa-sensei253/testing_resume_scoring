@@ -13,7 +13,7 @@ A tool that automatically scores resumes based on predefined criteria. This tool
 
 ### Prerequisites
 
-- Python 3.6+
+- Python 3.9
 - Git
 
 ### Setup Instructions
